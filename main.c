@@ -41,7 +41,13 @@ void display_entities(World *world) {
                 y >= camera_y + 15) continue;
             char character = world->appearance[entity].character;
             int foreground = world->appearance[entity].foreground;
-            int background = world->appearance[entity].background;
+            int background;
+            if (world->appearance[entity].background == TRANSPARENT &&
+                entity >= WORLD_WIDTH * WORLD_HEIGHT) {
+                background = world->appearance[(y * WORLD_WIDTH) + x].background;
+            } else {
+                background = world->appearance[entity].background;
+            }
             int color_pair = get_color_pair(foreground, background);
             attron(COLOR_PAIR(color_pair));
             mvaddch(y - camera_y, x - camera_x, character);
@@ -130,7 +136,7 @@ int main() {
     world.position[player].y = 7;
     world.appearance[player].character = '@';
     world.appearance[player].foreground = WHITE;
-    world.appearance[player].background = BLACK;
+    world.appearance[player].background = TRANSPARENT;
 
     int tree = world.create_entity(&world);
     world.mask[tree] = POSITION_COMPONENT | APPEARANCE_COMPONENT | COLLISION_COMPONENT;
@@ -138,7 +144,7 @@ int main() {
     world.position[tree].y = 6;
     world.appearance[tree].character = 'T';
     world.appearance[tree].foreground = WHITE;
-    world.appearance[tree].background = BLACK;
+    world.appearance[tree].background = TRANSPARENT;
 
 
     display_entities(&world);
