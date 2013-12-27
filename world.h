@@ -1,11 +1,14 @@
 #ifndef WORLD_H_
 #define WORLD_H_
 
+#include "point.h"
 #include "components.h"
 
 typedef struct WorldStruct World;
 struct WorldStruct {
     int entity_count;
+
+    Point camera;
 
     int *mask;
 

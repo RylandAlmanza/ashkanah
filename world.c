@@ -5,14 +5,14 @@ int World_create_entity(World *self) {
     int entity = self->entity_count;
     self->entity_count += 1;
     self->mask[entity] = NO_COMPONENT;
-    self->mask = realloc(self->mask, sizeof(int) * self->entity_count);
+    self->mask = realloc(self->mask, sizeof(int) * (self->entity_count + 1));
     self->position = realloc(self->position,
-                             sizeof(Position) * self->entity_count);
+                             sizeof(Position) * (self->entity_count + 1));
     self->appearance = realloc(self->appearance,
-                               sizeof(Appearance) * self->entity_count);
+                               sizeof(Appearance) * (self->entity_count + 1));
     self->collision = realloc(self->collision,
-                              sizeof(Collision) * self->entity_count);
-    self->light = realloc(self->light, sizeof(Light) * self->entity_count);
+                              sizeof(Collision) * (self->entity_count + 1));
+    self->light = realloc(self->light, sizeof(Light) * (self->entity_count + 1));
 
     return entity;
 }
@@ -25,6 +25,8 @@ World create_World() {
     World world;
 
     world.entity_count = 0;
+    world.camera.x = 0;
+    world.camera.y = 0;
 
     world.mask = malloc(sizeof(int));
 
