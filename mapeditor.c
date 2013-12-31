@@ -5,6 +5,7 @@
 #include "directions.h"
 #include "colorutils.h"
 #include "tilepreview.h"
+#include "tiletypes.h"
 
 typedef struct MapDataStruct {
     int width;
@@ -45,6 +46,28 @@ MapData load_map(char *filename) {
     }
 
     fclose(map_file);
+    return map_data;
+}
+
+MapData load_map_and_resize(char *filename, int width, int height) {
+    MapData old_data = load_map(filename);
+    MapData map_data;
+    map_data.width = width;
+    map_data.height = height;
+    map_data.tiles = malloc(sizeof(int) * (width * height));
+    int x;
+    int y;
+    for (y = 0; y < map_data.height; y++) {
+        for (x = 0; x < map_data.width; x++) {
+            if (x < old_data.width && y < old_data.height) {
+                int old_type = old_data.tiles[(y * old_data.width) + x];
+                map_data.tiles[(y * width) + x] = old_type;
+            } else {
+                map_data.tiles[(y * width) + x] = GRASS;
+            }
+        }
+    }
+
     return map_data;
 }
 
@@ -101,6 +124,11 @@ int main(int argc, char *argv[]) {
     } else if (argc == 2) {
         strcpy(filename, argv[1]);
         map_data = load_map(filename);
+    } else if (argc == 5) {
+        strcpy(filename, argv[1]);
+        int width = atoi(argv[3]);
+        int height = atoi(argv[4]);
+        map_data = load_map_and_resize(filename, width, height);
     } else {
         printf("Usage: %s <width> <height>\n", argv[0]);
         return 0;
