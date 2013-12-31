@@ -1,30 +1,76 @@
 #include <ncurses.h>
+#include <math.h>
 #include "world.h"
 #include "directions.h"
 #include "colorutils.h"
-#include <math.h>
+#include "tiletypes.h"
 
-#define WORLD_WIDTH 50
-#define WORLD_HEIGHT 30
+int WORLD_WIDTH;
+int WORLD_HEIGHT;
 
 Point get_delta_from_key(int key) {
     Point delta = {.x = 0, .y = 0};
-    switch (key) {
-        case KEY_UP:
-            delta = NORTH_DELTA;
-            break;
-        case KEY_RIGHT:
-            delta = EAST_DELTA;
-            break;
-        case KEY_DOWN:
-            delta = SOUTH_DELTA;
-            break;
-        case KEY_LEFT:
-            delta = WEST_DELTA;
-            break;
+    if (key == KEY_UP || key == 'k') {
+        delta = NORTH_DELTA;
+    } else if (key == KEY_RIGHT || key == 'l') {
+        delta = EAST_DELTA;
+    } else if (key == KEY_DOWN || key == 'j') {
+        delta = SOUTH_DELTA;
+    } else if (key == KEY_LEFT || key == 'h') {
+        delta = WEST_DELTA;
     }
     return delta;
-}            
+}
+
+void create_tile(int x, int y, int tile_type, World *world) {
+    int tile = world->create_entity(world);
+    world->mask[tile] = POSITION_COMPONENT | APPEARANCE_COMPONENT;
+    if (tile_type == GRASS) {
+        world->position[tile].x = x;
+        world->position[tile].y = y;
+        world->appearance[tile].character = '.';
+        world->appearance[tile].foreground = WHITE;
+        world->appearance[tile].background = GREEN;
+    } else if (tile_type == TREE) {
+        world->mask[tile] = world->mask[tile] | COLLISION_COMPONENT;
+        world->position[tile].x = x;
+        world->position[tile].y = y;
+        world->appearance[tile].character = 'T';
+        world->appearance[tile].foreground = WHITE;
+        world->appearance[tile].background = GREEN;
+    } else if (tile_type == WATER) {
+        world->mask[tile] = world->mask[tile] | COLLISION_COMPONENT;
+        world->position[tile].x = x;
+        world->position[tile].y = y;
+        world->appearance[tile].character = '~';
+        world->appearance[tile].foreground = WHITE;
+        world->appearance[tile].background = BLUE;
+    }
+}
+
+World load_World(char *filename) {
+    FILE *map_file = fopen(filename, "r");
+
+    int width;
+    int height;
+    fscanf(map_file, "%d %d", &width, &height);
+    WORLD_WIDTH = width;
+    WORLD_HEIGHT = height;
+    World world = create_World();
+    int tile_type;
+    int entity;
+    int x;
+    int y;
+    for (y = 0; y < height; y++) {
+        for (x = 0; x < width; x++) {
+            fscanf(map_file, "%d", &tile_type);
+            create_tile(x, y, tile_type, &world);
+        }
+    }
+
+    fclose(map_file);
+    return world;
+}
 
 #define DISPLAY_MASK (POSITION_COMPONENT | APPEARANCE_COMPONENT)
 void display_entities(World *world) {
@@ -89,6 +135,14 @@ void process_controls(World *world, int key) {
                 if (move_entity(world, entity, delta)) {
                     world->camera.x += delta.x;
                     world->camera.y += delta.y;
+                    if (world->camera.x < 0 ||
+                        world->camera.y < 0 ||
+                        world->camera.x + 25 > WORLD_WIDTH ||
+                        world->camera.y + 15 > WORLD_HEIGHT) {
+                        world->camera.x -= delta.x;
+                        world->camera.y -= delta.y;
+                    }
+                    return;
                 }
             }
         }
@@ -107,24 +161,7 @@ int main() {
     // Init color pairs
     initialize_all_color_pairs();
 
-    int color_pair = get_color_pair(WHITE, BLACK);
-    attron(COLOR_PAIR(color_pair));
-
-    World world = create_World();
-
-    int x;
-    int y;
-    for (y = 0; y < WORLD_HEIGHT; y++) {
-        for (x = 0; x < WORLD_WIDTH; x++) {
-            int tile = world.create_entity(&world);
-            world.mask[tile] = POSITION_COMPONENT | APPEARANCE_COMPONENT;
-            world.position[tile].x = x;
-            world.position[tile].y = y;
-            world.appearance[tile].character = '.';
-            world.appearance[tile].foreground = WHITE;
-            world.appearance[tile].background = GREEN;
-        }
-    }       
+    World world = load_World("maps/pork.mapdata");
 
     int player = world.create_entity(&world);
     world.mask[player] = POSITION_COMPONENT |
@@ -132,20 +169,10 @@ int main() {
                          CONTROL_MASK |
                          COLLISION_COMPONENT;
     world.position[player].x = 12;
-
     world.position[player].y = 7;
     world.appearance[player].character = '@';
     world.appearance[player].foreground = WHITE;
     world.appearance[player].background = TRANSPARENT;
-
-    int tree = world.create_entity(&world);
-    world.mask[tree] = POSITION_COMPONENT | APPEARANCE_COMPONENT | COLLISION_COMPONENT;
-    world.position[tree].x = 12;
-    world.position[tree].y = 6;
-    world.appearance[tree].character = 'T';
-    world.appearance[tree].foreground = WHITE;
-    world.appearance[tree].background = TRANSPARENT;
-
 
     display_entities(&world);
 
