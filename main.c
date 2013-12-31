@@ -133,15 +133,14 @@ void process_controls(World *world, int key) {
             Point delta = get_delta_from_key(key);
             if (delta.x != 0 || delta.y != 0) {
                 if (move_entity(world, entity, delta)) {
-                    world->camera.x += delta.x;
-                    world->camera.y += delta.y;
-                    if (world->camera.x < 0 ||
-                        world->camera.y < 0 ||
-                        world->camera.x + 25 > WORLD_WIDTH ||
-                        world->camera.y + 15 > WORLD_HEIGHT) {
-                        world->camera.x -= delta.x;
-                        world->camera.y -= delta.y;
-                    }
+                    world->camera.x = world->position[entity].x - 12;
+                    world->camera.y = world->position[entity].y - 7;
+                    if (world->camera.x < 0) world->camera.x = 0;
+                    if (world->camera.y < 0) world->camera.y = 0;
+                    if (world->camera.x + 25 > WORLD_WIDTH)
+                        world->camera.x = WORLD_WIDTH - 25;
+                    if (world->camera.y + 15 > WORLD_HEIGHT)
+                        world->camera.y = WORLD_HEIGHT - 15;
                     return;
                 }
             }
