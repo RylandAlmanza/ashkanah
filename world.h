@@ -16,6 +16,7 @@ struct WorldStruct {
     Appearance *appearance;
     Collision *collision;
     Light *light;
+    Quest *quest;
 
     int (*create_entity)(World *self);
     void (*destroy_entity)(World *self, int entity);

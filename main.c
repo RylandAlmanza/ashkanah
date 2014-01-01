@@ -1,5 +1,6 @@
 #include <ncurses.h>
 #include <math.h>
+#include <string.h>
 #include "world.h"
 #include "directions.h"
 #include "colorutils.h"
@@ -7,6 +8,12 @@
 
 int WORLD_WIDTH;
 int WORLD_HEIGHT;
+
+typedef enum {
+    TREES_CUT = 0
+} Stats;
+
+int player_stats[1];
 
 Point get_delta_from_key(int key) {
     Point delta = {.x = 0, .y = 0};
@@ -22,8 +29,24 @@ Point get_delta_from_key(int key) {
     return delta;
 }
 
-void create_tile(int x, int y, int tile_type, World *world) {
-    int tile = world->create_entity(world);
+void log_message(char message[1024]) {
+    int rows, cols;
+    getmaxyx(stdscr, rows, cols);
+    int x = 0;
+    int y = 15;
+    int i;
+    attron(COLOR_PAIR(get_color_pair(WHITE, BLACK)));
+    for (i = 0; i < strlen(message); i++) {
+        mvaddch(y, x, message[i]);
+        x += 1;
+        if (x == rows) {
+            x = 0;
+            y += 1;
+        }
+    }
+}   
+
+void create_tile(int x, int y, int tile_type, int tile, World *world) {
     world->mask[tile] = POSITION_COMPONENT | APPEARANCE_COMPONENT;
     if (tile_type == GRASS) {
         world->position[tile].x = x;
@@ -32,7 +55,9 @@ void create_tile(int x, int y, int tile_type, World *world) {
         world->appearance[tile].foreground = WHITE;
         world->appearance[tile].background = GREEN;
     } else if (tile_type == TREE) {
-        world->mask[tile] = world->mask[tile] | COLLISION_COMPONENT;
+        world->mask[tile] = world->mask[tile] |
+                            COLLISION_COMPONENT |
+                            TREE_COMPONENT;
         world->position[tile].x = x;
         world->position[tile].y = y;
         world->appearance[tile].character = 'T';
@@ -64,7 +89,8 @@ World load_World(char *filename) {
     for (y = 0; y < height; y++) {
         for (x = 0; x < width; x++) {
             fscanf(map_file, "%d", &tile_type);
-            create_tile(x, y, tile_type, &world);
+            int tile = world.create_entity(&world);
+            create_tile(x, y, tile_type, tile, &world);
         }
     }
 
@@ -103,6 +129,24 @@ void display_entities(World *world) {
     refresh();
 }
 
+void cut_tree(World *world, int tree) {
+    player_stats[TREES_CUT] += 1;
+    create_tile(world->position[tree].x,
+                world->position[tree].y,
+                GRASS,
+                tree,
+                world);
+}
+
+void do_quest(World *world, int entity) {
+    Quest *quest = &world->quest[entity];
+    if (player_stats[quest->stat_watched] >= quest->value_needed) {
+        log_message(quest->finish_text);
+    } else {
+        log_message(quest->start_text);
+    }
+}
+
 bool move_entity(World *world, int entity, Point delta) {
     int proposed_x = world->position[entity].x + delta.x;
     int proposed_y = world->position[entity].y + delta.y;
@@ -115,6 +159,16 @@ bool move_entity(World *world, int entity, Point delta) {
                 COLLISION_COMPONENT) {
                 if (proposed_x == world->position[entity_2].x &&
                     proposed_y == world->position[entity_2].y) {
+                    if ((world->mask[entity] & CONTROL_COMPONENT) ==
+                        CONTROL_COMPONENT &&
+                        (world->mask[entity_2] & QUEST_COMPONENT) ==
+                        QUEST_COMPONENT)
+                        do_quest(world, entity_2);
+                    if ((world->mask[entity] & CONTROL_COMPONENT) ==
+                        CONTROL_COMPONENT &&
+                        (world->mask[entity_2] & TREE_COMPONENT) ==
+                        TREE_COMPONENT)
+                        cut_tree(world, entity_2);
                     return false;
                 }
             }
@@ -165,13 +219,37 @@ int main() {
     int player = world.create_entity(&world);
     world.mask[player] = POSITION_COMPONENT |
                          APPEARANCE_COMPONENT |
-                         CONTROL_MASK |
+                         CONTROL_COMPONENT |
                          COLLISION_COMPONENT;
     world.position[player].x = 12;
     world.position[player].y = 7;
     world.appearance[player].character = '@';
     world.appearance[player].foreground = WHITE;
     world.appearance[player].background = TRANSPARENT;
+
+    player_stats[TREES_CUT] = 0;
+
+    int logger = world.create_entity(&world);
+    world.mask[logger] = POSITION_COMPONENT |
+                         APPEARANCE_COMPONENT |
+                         COLLISION_COMPONENT |
+                         QUEST_COMPONENT;
+    world.position[logger].x = 20;
+    world.position[logger].y = 20;
+    world.appearance[logger].character = '@';
+    world.appearance[logger].foreground = BLUE;
+    world.appearance[logger].background = TRANSPARENT;
+    world.quest[logger].stat_watched = TREES_CUT;
+    world.quest[logger].value_needed = 5;
+
+    char start_text[1024] = "Hey, dude, I'm feelin' a little lazy today. ";
+    strcat(start_text, "Wanna' cut down some trees for me? I need 5 logs.");
+    strcpy(world.quest[logger].start_text, start_text);
+    
+    char finish_text[1024] = "Thanks, man. Huh? Compensation? Uh, sorry, ";
+    strcat(finish_text, "dude. I don't really have anything to give you. I ");
+    strcat(finish_text, "thought you were just doing me a favor.");
+    strcpy(world.quest[logger].finish_text, finish_text);
 
     display_entities(&world);
 

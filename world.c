@@ -12,7 +12,10 @@ int World_create_entity(World *self) {
                                sizeof(Appearance) * (self->entity_count + 1));
     self->collision = realloc(self->collision,
                               sizeof(Collision) * (self->entity_count + 1));
-    self->light = realloc(self->light, sizeof(Light) * (self->entity_count + 1));
+    self->light = realloc(self->light,
+                          sizeof(Light) * (self->entity_count + 1));
+    self->quest = realloc(self->quest,
+                          sizeof(Quest) * (self->entity_count + 1));
 
     return entity;
 }
@@ -34,6 +37,7 @@ World create_World() {
     world.appearance = malloc(sizeof(Appearance));
     world.collision = malloc(sizeof(Collision));
     world.light = malloc(sizeof(Light));
+    world.quest = malloc(sizeof(Quest));
     world.create_entity = &World_create_entity;
     world.destroy_entity = &World_destroy_entity;
 
@@ -46,4 +50,5 @@ void destroy_World(World *world) {
     free(world->appearance);
     free(world->collision);
     free(world->light);
+    free(world->quest);
 }

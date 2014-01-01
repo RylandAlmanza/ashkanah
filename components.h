@@ -9,7 +9,9 @@ typedef enum {
     APPEARANCE_COMPONENT = 1 << 1,
     CONTROL_COMPONENT = 1 << 2,
     COLLISION_COMPONENT = 1 << 3,
-    LIGHT_COMPONENT = 1 << 4
+    LIGHT_COMPONENT = 1 << 4,
+    QUEST_COMPONENT = 1 << 5,
+    TREE_COMPONENT = 1 << 6
 } Component;
 
 typedef struct {
@@ -30,5 +32,12 @@ typedef struct {
 typedef struct {
     bool brightness;
 } Light;
+
+typedef struct {
+    int stat_watched;
+    int value_needed;
+    char start_text[1024];
+    char finish_text[1024];
+} Quest;
 
 #endif
