@@ -39,7 +39,8 @@ void log_message(char message[1024]) {
     for (i = 0; i < strlen(message); i++) {
         mvaddch(y, x, message[i]);
         x += 1;
-        if (x == rows) {
+        if (x >= rows && message[i + 1] == ' ') {
+            i += 1;
             x = 0;
             y += 1;
         }
