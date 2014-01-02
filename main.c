@@ -60,6 +60,7 @@ void create_tile(int x, int y, int tile_type, int tile, World *world) {
         world->appearance[tile].character = '.';
         world->appearance[tile].foreground = WHITE;
         world->appearance[tile].background = GREEN;
+        world->appearance[tile].is_bold = false;
     } else if (tile_type == TREE) {
         world->mask[tile] = world->mask[tile] |
                             COLLISION_COMPONENT |
@@ -67,8 +68,9 @@ void create_tile(int x, int y, int tile_type, int tile, World *world) {
         world->position[tile].x = x;
         world->position[tile].y = y;
         world->appearance[tile].character = 'T';
-        world->appearance[tile].foreground = GREEN;
+        world->appearance[tile].foreground = WHITE;
         world->appearance[tile].background = GREEN;
+        world->appearance[tile].is_bold = false;
     } else if (tile_type == WATER) {
         world->mask[tile] = world->mask[tile] | COLLISION_COMPONENT;
         world->position[tile].x = x;
@@ -76,6 +78,7 @@ void create_tile(int x, int y, int tile_type, int tile, World *world) {
         world->appearance[tile].character = '~';
         world->appearance[tile].foreground = WHITE;
         world->appearance[tile].background = BLUE;
+        world->appearance[tile].is_bold = false;
     }
 }
 
@@ -127,9 +130,12 @@ void display_entities(World *world) {
                 background = world->appearance[entity].background;
             }
             int color_pair = get_color_pair(foreground, background);
-            attron(COLOR_PAIR(color_pair) | A_BOLD);
+            int attribute = COLOR_PAIR(color_pair);
+            if (world->appearance[entity].is_bold)
+                attribute = attribute | A_BOLD;
+            attron(attribute);
             mvaddch(y - camera_y, x - camera_x, character);
-            attroff(COLOR_PAIR(color_pair) | A_BOLD);
+            attroff(attribute);
         }
     }
     refresh();

@@ -89,9 +89,9 @@ void display_map(MapData map_data) {
         for (x = 0; x < map_data.width; x++) {
             int tile_type = map_data.tiles[(y * map_data.width) + x];
             TilePreview preview = get_tile_preview(tile_type);
-            attron(COLOR_PAIR(preview.color_pair));
+            attron(COLOR_PAIR(preview.color_pair) | A_BOLD);
             mvaddch(y, x, preview.character);
-            attroff(COLOR_PAIR(preview.color_pair));
+            attroff(COLOR_PAIR(preview.color_pair) | A_BOLD);
         }
     }
 }

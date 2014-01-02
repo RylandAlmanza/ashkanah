@@ -23,6 +23,7 @@ typedef struct {
     char character;
     int foreground;
     int background;
+    bool is_bold;
 } Appearance;
 
 typedef struct {

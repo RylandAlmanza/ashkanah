@@ -10,7 +10,7 @@ TilePreview get_tile_preview(int tile_type) {
             break;
         case 2:
             tile_preview.character = 'T';
-            tile_preview.color_pair = get_color_pair(WHITE, GREEN);
+            tile_preview.color_pair = get_color_pair(GREEN, GREEN);
             break;
         case 3:
             tile_preview.character = '~';
