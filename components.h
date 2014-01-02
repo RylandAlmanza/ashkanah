@@ -34,10 +34,12 @@ typedef struct {
 } Light;
 
 typedef struct {
-    int stat_watched;
-    int value_needed;
+    bool is_started;
+    bool is_done;
+    int item_needed;
+    int amount_needed;
     char start_text[1024];
-    char finish_text[1024];
+    char end_text[1024];
 } Quest;
 
 #endif

@@ -13,7 +13,12 @@ typedef enum {
     TREES_CUT = 0
 } Stats;
 
+typedef enum {
+    LOGS = 0
+} Inventory;
+
 int player_stats[1];
+int player_inventory[1];
 
 Point get_delta_from_key(int key) {
     Point delta = {.x = 0, .y = 0};
@@ -39,13 +44,13 @@ void log_message(char message[1024]) {
     for (i = 0; i < strlen(message); i++) {
         mvaddch(y, x, message[i]);
         x += 1;
-        if (x >= rows && message[i + 1] == ' ') {
+        if (x >= cols && message[i + 1] == ' ') {
             i += 1;
             x = 0;
             y += 1;
         }
     }
-}   
+}
 
 void create_tile(int x, int y, int tile_type, int tile, World *world) {
     world->mask[tile] = POSITION_COMPONENT | APPEARANCE_COMPONENT;
@@ -62,7 +67,7 @@ void create_tile(int x, int y, int tile_type, int tile, World *world) {
         world->position[tile].x = x;
         world->position[tile].y = y;
         world->appearance[tile].character = 'T';
-        world->appearance[tile].foreground = WHITE;
+        world->appearance[tile].foreground = GREEN;
         world->appearance[tile].background = GREEN;
     } else if (tile_type == WATER) {
         world->mask[tile] = world->mask[tile] | COLLISION_COMPONENT;
@@ -122,9 +127,9 @@ void display_entities(World *world) {
                 background = world->appearance[entity].background;
             }
             int color_pair = get_color_pair(foreground, background);
-            attron(COLOR_PAIR(color_pair));
+            attron(COLOR_PAIR(color_pair) | A_BOLD);
             mvaddch(y - camera_y, x - camera_x, character);
-            attroff(COLOR_PAIR(color_pair));
+            attroff(COLOR_PAIR(color_pair) | A_BOLD);
         }
     }
     refresh();
@@ -132,6 +137,7 @@ void display_entities(World *world) {
 
 void cut_tree(World *world, int tree) {
     player_stats[TREES_CUT] += 1;
+    player_inventory[LOGS] += 1;
     create_tile(world->position[tree].x,
                 world->position[tree].y,
                 GRASS,
@@ -141,9 +147,21 @@ void cut_tree(World *world, int tree) {
 
 void do_quest(World *world, int entity) {
     Quest *quest = &world->quest[entity];
-    if (player_stats[quest->stat_watched] >= quest->value_needed) {
-        log_message(quest->finish_text);
+
+    if (!quest->is_started) {
+        quest->is_started = true;
+        log_message(quest->start_text);
+        return;
+    }
+    if (quest->is_done) {
+        log_message(quest->end_text);
     } else {
+        if (player_inventory[quest->item_needed] >= quest->amount_needed) {
+            player_inventory[quest->item_needed] -= quest->amount_needed;
+            quest->is_done = true;
+            log_message(quest->end_text);
+            return;
+        }
         log_message(quest->start_text);
     }
 }
@@ -229,6 +247,7 @@ int main() {
     world.appearance[player].background = TRANSPARENT;
 
     player_stats[TREES_CUT] = 0;
+    player_inventory[LOGS] = 0;
 
     int logger = world.create_entity(&world);
     world.mask[logger] = POSITION_COMPONENT |
@@ -240,17 +259,18 @@ int main() {
     world.appearance[logger].character = '@';
     world.appearance[logger].foreground = BLUE;
     world.appearance[logger].background = TRANSPARENT;
-    world.quest[logger].stat_watched = TREES_CUT;
-    world.quest[logger].value_needed = 5;
+    world.quest[logger].is_done = false;
+    world.quest[logger].item_needed = LOGS;
+    world.quest[logger].amount_needed = 5;
 
     char start_text[1024] = "Hey, dude, I'm feelin' a little lazy today. ";
     strcat(start_text, "Wanna' cut down some trees for me? I need 5 logs.");
     strcpy(world.quest[logger].start_text, start_text);
     
-    char finish_text[1024] = "Thanks, man. Huh? Compensation? Uh, sorry, ";
-    strcat(finish_text, "dude. I don't really have anything to give you. I ");
-    strcat(finish_text, "thought you were just doing me a favor.");
-    strcpy(world.quest[logger].finish_text, finish_text);
+    char end_text[1024] = "Thanks, man. Huh? Compensation? Uh, sorry, ";
+    strcat(end_text, "dude. I don't really have anything to give you. I ");
+    strcat(end_text, "thought you were just doing me a favor.");
+    strcpy(world.quest[logger].end_text, end_text);
 
     display_entities(&world);
 
