@@ -8,6 +8,8 @@
 
 int WORLD_WIDTH;
 int WORLD_HEIGHT;
+int CAMERA_WIDTH;
+int CAMERA_HEIGHT;
 
 typedef enum {
     TREES_CUT = 0
@@ -35,6 +37,8 @@ Point get_delta_from_key(int key) {
 }
 
 void log_message(char message[1024]) {
+    move(0, 15);
+    clrtobot();
     int rows, cols;
     getmaxyx(stdscr, rows, cols);
     int x = 0;
@@ -118,8 +122,8 @@ void display_entities(World *world) {
             int camera_y = world->camera.y;
             if (x < camera_x ||
                 y < camera_y ||
-                x >= camera_x + 25 ||
-                y >= camera_y + 15) continue;
+                x >= camera_x + CAMERA_WIDTH ||
+                y >= camera_y + CAMERA_HEIGHT) continue;
             char character = world->appearance[entity].character;
             int foreground = world->appearance[entity].foreground;
             int background;
@@ -141,6 +145,10 @@ void display_entities(World *world) {
     refresh();
 }
 
+void display_inventory() {
+    mvprintw(0, 36, "Logs: %d", player_inventory[LOGS]);
+}
+
 void cut_tree(World *world, int tree) {
     player_stats[TREES_CUT] += 1;
     player_inventory[LOGS] += 1;
@@ -149,6 +157,7 @@ void cut_tree(World *world, int tree) {
                 GRASS,
                 tree,
                 world);
+    log_message("You cut down a tree.");
 }
 
 void do_quest(World *world, int entity) {
@@ -239,6 +248,8 @@ int main() {
     // Init color pairs
     initialize_all_color_pairs();
 
+    CAMERA_WIDTH = 35;
+    CAMERA_HEIGHT = 15;
     World world = load_World("maps/pork.mapdata");
 
     int player = world.create_entity(&world);
@@ -279,12 +290,14 @@ int main() {
     strcpy(world.quest[logger].end_text, end_text);
 
     display_entities(&world);
+    display_inventory();
 
     int key;
     while (key != 'q') {
         key = getch();
         process_controls(&world, key);
         display_entities(&world);
+        display_inventory();
     }
 
     destroy_World(&world);
