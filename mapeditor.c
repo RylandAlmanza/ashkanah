@@ -89,9 +89,14 @@ void display_map(MapData map_data) {
         for (x = 0; x < map_data.width; x++) {
             int tile_type = map_data.tiles[(y * map_data.width) + x];
             TilePreview preview = get_tile_preview(tile_type);
-            attron(COLOR_PAIR(preview.color_pair) | A_BOLD);
+            int color_pair = COLOR_PAIR(preview.color_pair);
+            int attribute = color_pair;
+            if (preview.is_bold) {
+                attribute |= A_BOLD;
+            }
+            attron(attribute);
             mvaddch(y, x, preview.character);
-            attroff(COLOR_PAIR(preview.color_pair) | A_BOLD);
+            attroff(attribute);
         }
     }
 }
@@ -155,7 +160,10 @@ int main(int argc, char *argv[]) {
         }
         if (key == '1' ||
             key == '2' ||
-            key == '3') {
+            key == '3' ||
+            key == '4' ||
+            key == '5' ||
+            key == '6') {
             tile_type = key - '0';
         }
         if (key == 'p') {

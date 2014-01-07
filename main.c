@@ -59,8 +59,6 @@ void log_message(char message[1024]) {
 void create_tile(int x, int y, int tile_type, int tile, World *world) {
     world->mask[tile] = POSITION_COMPONENT | APPEARANCE_COMPONENT;
     if (tile_type == GRASS) {
-        world->position[tile].x = x;
-        world->position[tile].y = y;
         world->appearance[tile].character = '.';
         world->appearance[tile].foreground = WHITE;
         world->appearance[tile].background = GREEN;
@@ -69,21 +67,37 @@ void create_tile(int x, int y, int tile_type, int tile, World *world) {
         world->mask[tile] = world->mask[tile] |
                             COLLISION_COMPONENT |
                             TREE_COMPONENT;
-        world->position[tile].x = x;
-        world->position[tile].y = y;
         world->appearance[tile].character = 'T';
         world->appearance[tile].foreground = WHITE;
         world->appearance[tile].background = GREEN;
         world->appearance[tile].is_bold = false;
     } else if (tile_type == WATER) {
         world->mask[tile] = world->mask[tile] | COLLISION_COMPONENT;
-        world->position[tile].x = x;
-        world->position[tile].y = y;
         world->appearance[tile].character = '~';
         world->appearance[tile].foreground = WHITE;
         world->appearance[tile].background = BLUE;
         world->appearance[tile].is_bold = false;
+    } else if (tile_type == ROCK_WALL) {
+        world->mask[tile] = world->mask[tile] | COLLISION_COMPONENT;
+        world->appearance[tile].character = '#';
+        world->appearance[tile].foreground = BLACK;
+        world->appearance[tile].background = WHITE;
+        world->appearance[tile].is_bold = true;
+    } else if (tile_type == BRIDGE) {
+        world->mask[tile] = world->mask[tile];
+        world->appearance[tile].character = '=';
+        world->appearance[tile].foreground = BLACK;
+        world->appearance[tile].background = BLACK;
+        world->appearance[tile].is_bold = true;
+    } else if (tile_type == ROCK_FLOOR) {
+        world->mask[tile] = world->mask[tile];
+        world->appearance[tile].character = '.';
+        world->appearance[tile].foreground = BLACK;
+        world->appearance[tile].background = BLACK;
+        world->appearance[tile].is_bold = true;
     }
+    world->position[tile].x = x;
+    world->position[tile].y = y;
 }
 
 World load_World(char *filename) {
@@ -221,12 +235,12 @@ void process_controls(World *world, int key) {
             Point delta = get_delta_from_key(key);
             if (delta.x != 0 || delta.y != 0) {
                 if (move_entity(world, entity, delta)) {
-                    world->camera.x = world->position[entity].x - 12;
+                    world->camera.x = world->position[entity].x - 17;
                     world->camera.y = world->position[entity].y - 7;
                     if (world->camera.x < 0) world->camera.x = 0;
                     if (world->camera.y < 0) world->camera.y = 0;
-                    if (world->camera.x + 25 > WORLD_WIDTH)
-                        world->camera.x = WORLD_WIDTH - 25;
+                    if (world->camera.x + 35 > WORLD_WIDTH)
+                        world->camera.x = WORLD_WIDTH - 35;
                     if (world->camera.y + 15 > WORLD_HEIGHT)
                         world->camera.y = WORLD_HEIGHT - 15;
                     return;
